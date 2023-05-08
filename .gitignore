@@ -1,0 +1,14 @@
+#  Codium
+
+.VSCodium/*
+!.VSCodium/settings.json
+!.VSCodium/tasks.json
+!.VSCodium/launch.json
+!.VSCodium/extensions.json
+!.VSCodium/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
