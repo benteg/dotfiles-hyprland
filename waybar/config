@@ -11,12 +11,18 @@
   ],
   "modules-right": [
     "wireplumber",
+    "custom/sep",
     "backlight",
+    "custom/sep",
     "bluetooth",
     "network",
+    "custom/sep",
     "clock",
     "battery"
   ],
+  "custom/sep": {
+    "format": "|"
+  },
   "battery": {
     "full-at": 90,
     "intervall": 20,
@@ -39,10 +45,11 @@
   "backlight": {
     "format": "{icon} {percent}%",
     "format-icons": [
-      ""
+      "",
+      ""
     ],
-    "on-scroll-up": "light -U 2",
-    "on-scroll-down": "light -A 2",
+    "on-scroll-down": "light -U 2",
+    "on-scroll-up": "light -A 2",
     "on-click": "python3 ~/.config/waybar/scripts/light.py",
     "smooth-scrolling-threshold": 0.35
   },
@@ -56,5 +63,22 @@
     "sort-by-number": true,
     "smooth-scrolling-threshold": 2,
     "format": "{icon}"
+  },
+  "wireplumber": {
+    "format": "{icon} {volume}%",
+    "format-muted": " muted",
+    "format-off": " off",
+    "format-icons": [
+      "",
+      ""
+    ],
+    "states": {
+      "off": 0,
+      "loud": 101
+    },
+    "on-scroll-up": "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.25",
+    "on-scroll-down": "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.25",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "smooth-scrolling-threshold": 1.8
   }
 }
