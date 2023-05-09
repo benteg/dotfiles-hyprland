@@ -1,0 +1,60 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 30,
+  "margin": "10, 20, 0, 20",
+  "modules-left": [
+    "hyprland/window"
+  ],
+  "modules-center": [
+    "wlr/workspaces"
+  ],
+  "modules-right": [
+    "wireplumber",
+    "backlight",
+    "bluetooth",
+    "network",
+    "clock",
+    "battery"
+  ],
+  "battery": {
+    "full-at": 90,
+    "intervall": 20,
+    "states": {
+      "warning": 25,
+      "critical": 15
+    },
+    "format-charging": " {capacity}%",
+    "format-discharging-warning": " {capacity}%",
+    "format-discharging-critical": " {capacity}%",
+    "format": "{icon} {capacity}%",
+    "format-icons": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "tooltip-format": "{capacity}\n{timeTo}"
+  },
+  "backlight": {
+    "format": "{icon} {percent}%",
+    "format-icons": [
+      ""
+    ],
+    "on-scroll-up": "light -U 2",
+    "on-scroll-down": "light -A 2",
+    "on-click": "python3 ~/.config/waybar/scripts/light.py",
+    "smooth-scrolling-threshold": 0.35
+  },
+  "hyprland/window": {
+    "seperate-outputs": true
+  },
+  "wlr/workspaces": {
+    "on-click": "activate",
+    "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1",
+    "sort-by-number": true,
+    "smooth-scrolling-threshold": 2,
+    "format": "{icon}"
+  }
+}

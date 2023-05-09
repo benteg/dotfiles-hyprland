@@ -1,0 +1,58 @@
+@import "macchiato.css";
+* {
+  border: none;
+  border-radius: 0;
+  font-family: JetBrains Mono, "Font Awesome 6";
+}
+
+window#waybar {
+  border-radius: 10;
+  background: transparent;
+}
+
+#workspaces {
+  background: @base;
+  border-radius: 11;
+  background: @base;
+  border: 2px solid @blue;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+#workspaces button {
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  box-shadow: inherit;
+  text-shadow: inherit;
+  color: @text;
+  background: @base;
+  border-radius: 8px;
+}
+
+#workspaces button:hover {
+  color: @subtext0;
+  background: @surface0;
+}
+
+#workspaces button.active {
+  color: @surface0;
+  background: @blue;
+  border-radius: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#wireplumber {
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom: 2px solid @blue;
+  border-top: 2px solid @blue;
+  border-left: 2px solid @blue;
+  border-right: none;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  background: @base;
+  color: @text;
+}
