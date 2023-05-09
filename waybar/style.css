@@ -3,16 +3,32 @@
   border: none;
   border-radius: 0;
   font-family: JetBrains Mono, "Font Awesome 6";
+  font-weight: bold;
 }
 
 window#waybar {
-  border-radius: 10;
+  border-radius: 0;
   background: transparent;
+}
+
+tooltip * {
+  color: @subtext0;
+  background: @surface0;
+  border: none;
+  border-radius: 10px;
+}
+
+#custom-insidesep {
+  background: @base;
+  color: @surface2;
+  padding: 0px;
+  border-bottom: 2px solid @blue;
+  border-top: 2px solid @blue;
 }
 
 #workspaces {
   background: @base;
-  border-radius: 11;
+  border-radius: 11px;
   background: @base;
   border: 2px solid @blue;
   padding-top: 0px;
@@ -40,13 +56,27 @@ window#waybar {
   color: @surface0;
   background: @blue;
   border-radius: 8px;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
+#network.disabled,
+#network.disconnected,
+#wireplumber.off,
+#wireplumber.muted {
+  color: @surface2;
+}
+
+#wireplumber.loud {
+  color: @red;
+}
+
+#bluetooth,
+#network,
+#backlight,
 #wireplumber {
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-left: 4px;
+  padding-right: 4px;
   border-bottom: 2px solid @blue;
   border-top: 2px solid @blue;
   border-left: 2px solid @blue;
@@ -55,4 +85,38 @@ window#waybar {
   border-bottom-left-radius: 10px;
   background: @base;
   color: @text;
+}
+
+#bluetooth,
+#backlight {
+  border-bottom: 2px solid @blue;
+  border-top: 2px solid @blue;
+  border-left: none;
+  border-right: 2px solid @blue;
+  border-radius: 0px;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+#battery.full,
+#battery,
+#clock,
+#custom-weather,
+#window {
+  border: 2px solid @blue;
+  border-radius: 10px;
+  color: @text;
+  background: @base;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#battery.charging {
+  color: @green;
+}
+#battery.discharging.warning {
+  color: @yellow;
+}
+#battery.discharging.critical {
+  color: @red;
 }
