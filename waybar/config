@@ -18,6 +18,10 @@
     "custom/insidesep",
     "backlight",
     "custom/oudesidesep",
+    "cpu",
+    "custom/insidesep",
+    "memory",
+    "custom/oudesidesep",
     "network",
     "custom/insidesep",
     "bluetooth",
@@ -35,10 +39,7 @@
     "interval": "once"
   },
   "custom/weather": {
-    "exec": "python3 ~/.config/waybar/scripts/weather.py -k 6d5213c7b30caa1bee049e24db642eb0 --location karlsruhe",
-    "on-click": "python3 ~/.config/waybar/scripts/weather.py -k 6d5213c7b30caa1bee049e24db642eb0 --location karlsruhe",
-    "interval": "once",
-    "restart-interval": 600,
+    "exec": "python3 ~/.config/waybar/scripts/weather.py -k 6d5213c7b30caa1bee049e24db642eb0 --location karlsruhe --interval 300",
     "return-type": "json",
     "format": "{}"
   },
@@ -62,6 +63,19 @@
     ],
     "tooltip-format": "{timeTo}"
   },
+  "cpu": {
+    "format": "{usage}% ",
+    "states": {
+      "highLoad": 66
+    }
+  },
+  "memory": {
+    "format": "{percentage}% ",
+    "states": {
+      "highLoad": 66
+    },
+    "tooltip-format": ": {used}|{total}GiB ({percentage}%)\n: {swapUsed}|{swapTotal}GiB ({swapPercentage}%)"
+  },
   "backlight": {
     "format": "{percent}% {icon}",
     "format-icons": [
@@ -77,7 +91,8 @@
   "hyprland/window": {
     "seperate-outputs": true,
     "max-length": 24,
-    "min-length": 6
+    "min-length": 6,
+    "on-click": "rofi -show window -show-icons -location 1"
   },
   "wlr/workspaces": {
     "on-click": "activate",
@@ -106,19 +121,19 @@
   },
   "network": {
     "interval": 2,
-    "format-wifi": "{bandwidthTotalBits} ",
+    "format-wifi": "{essid} ",
     "format-ethernet": "{bandwidthTotalBits} ",
     "format-disconnected": "",
     "format-disabled": "",
-    "max-length": 16,
+    "max-length": 12,
     "on-click": "rofi-wifi-menu",
-    "tooltip-format-wifi": "{essid}\n up: {bandwidthUpBits}\n down: {bandwidthDownBits}\nfreq: {frequency}MHz",
-    "tooltip-format-ethernet": "{essid}\n up: {bandwidthUpBits}\n down: {bandwidthDownBits}",
+    "tooltip-format-wifi": ": {bandwidthUpBits}\n: {bandwidthDownBits}\n: {signalStrength}%\n: {frequency}GHz",
+    "tooltip-format-ethernet": "{ipaddr}\n up: {bandwidthUpBits}\n down: {bandwidthDownBits}",
     "tooltip-format-disconnected": "disconnected",
     "tooltip-format-disabled": "disabled"
   },
   "bluetooth": {
-    "format": "",
+    "format": "",
     "tooltip-format": "{status}"
   },
   "clock": {

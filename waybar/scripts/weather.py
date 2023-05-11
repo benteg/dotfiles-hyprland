@@ -148,13 +148,11 @@ class Weather:
                 if self.wind.gust
                 else "",
             }
-            text = text_format
-            tooltip = tooltip_format
             for opt in format_options:
-                text = text.replace(opt, format_options[opt])
-                tooltip = tooltip.replace(opt, format_options[opt])
-            self.text = text
-            self.tooltip = tooltip
+                text_format = text_format.replace(opt, format_options[opt])
+                tooltip_format = tooltip_format.replace(opt, format_options[opt])
+            self.text = text_format
+            self.tooltip = tooltip_format
 
             if as_text is True:
                 print(
@@ -193,6 +191,14 @@ class Weather:
     required=False,
 )
 @click.option(
+    "--interval",
+    "-i",
+    help="Refresh interval. Set to 0 to get weather and exit",
+    required=False,
+    default=300,
+    type=int,
+)
+@click.option(
     "--as-text",
     is_flag=True,
     default=False,
@@ -204,7 +210,7 @@ class Weather:
     help="Specify format for text",
     type=str,
     required=False,
-    default="{weatherIcon} {temperature}",
+    default="{temperature} {weatherIcon}",
 )
 @click.option(
     "--tooltip-format",
@@ -225,13 +231,18 @@ def main(
     api_key: str,
     location: str,
     units: str,
+    interval: int,
     as_text: bool,
     text_format: str,
     tooltip_format: str,
 ):
-    weather = Weather(api_key, location, Unit(units))
-    weather.refresh()
-    weather.print(as_text, text_format, tooltip_format)
+    while True:
+        weather = Weather(api_key, location, Unit(units))
+        weather.refresh()
+        weather.print(as_text, text_format, tooltip_format)
+        if interval == 0:
+            sys.exit()
+        sleep(interval)
 
 
 if __name__ == "__main__":
