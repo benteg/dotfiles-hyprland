@@ -115,28 +115,48 @@ class Weather:
     def refresh(self):
         self.get_weather(self.request())
 
-    def print(self, format: str):
+    def print(
+        self,
+        as_text: bool,
+        text_format: str,
+        tooltip_format: str,
+    ):
         if self.error:
-            if format == "text":
+            if as_text is True:
                 if self.error:
                     print(self.error, flush=True)
 
-            elif format == "json":
+            else:
                 if self.error:
                     print(json.dumps({"text": self.error}), flush=True)
 
         else:
-            self.text = f"{self.weather.icon} {round(self.temperature.temp, ndigits=1)}{self.temperature.unit}"
-            self.tooltip = (
-                f" {self.city}\n"
-                f"{self.weather.icon} {self.weather.desc.capitalize()}\n"
-                f" {round(self.temperature.temp, ndigits=1)}{self.temperature.unit}({round(self.temperature.feel, ndigits=1)}{self.temperature.unit})\n"
-                f" {self.wind.icon} {round(self.wind.speed)}{self.wind.unit}{f'({round(self.wind.gust)}{self.wind.unit})' if self.wind.gust else ''}\n"
-                f" {round(self.weather.humid, ndigits=1)}{self.weather.unit}\n"
-                f" {self.datetime}"
-            )
+            format_options = {
+                "{city}": self.city,
+                "{humidity}": f"{round(self.weather.humid, ndigits=1)}{self.weather.unit}",
+                "{temperature}": f"{round(self.temperature.temp, ndigits=1)}{self.temperature.unit}",
+                "{temperatureFeel}": f"{round(self.temperature.feel, ndigits=1)}{self.temperature.unit}",
+                "{temperatureMin}": f"{round(self.temperature.min, ndigits=1)}{self.temperature.unit}",
+                "{temperatureMax}": f"{round(self.temperature.max, ndigits=1)}{self.temperature.unit}",
+                "{time}": self.datetime,
+                "{weather}": self.weather.main,
+                "{weatherIcon}": self.weather.icon,
+                "{weatherDesc}": self.weather.desc.title(),
+                "{windDirection}": self.wind.icon,
+                "{windSpeed}": f"{round(self.wind.speed)}{self.wind.unit}",
+                "{windGust}": f"{round(self.wind.gust)}{self.wind.unit}"
+                if self.wind.gust
+                else "",
+            }
+            text = text_format
+            tooltip = tooltip_format
+            for opt in format_options:
+                text = text.replace(opt, format_options[opt])
+                tooltip = tooltip.replace(opt, format_options[opt])
+            self.text = text
+            self.tooltip = tooltip
 
-            if format == "text":
+            if as_text is True:
                 print(
                     self.text,
                     self.tooltip,
@@ -144,7 +164,7 @@ class Weather:
                     flush=True,
                 )
 
-            elif format == "json":
+            else:
                 print(
                     json.dumps({"text": self.text, "tooltip": self.tooltip}),
                     flush=True,
@@ -172,13 +192,46 @@ class Weather:
     default=Unit.METRIC.value,
     required=False,
 )
-@click.option("--text", "format", flag_value="text", default=True)
-@click.option("--json", "format", flag_value="json")
+@click.option(
+    "--as-text",
+    is_flag=True,
+    default=False,
+    required=False,
+    help="Print output as plain text",
+)
+@click.option(
+    "--text-format",
+    help="Specify format for text",
+    type=str,
+    required=False,
+    default="{weatherIcon} {temperature}",
+)
+@click.option(
+    "--tooltip-format",
+    help="Specify format for tooltip",
+    type=str,
+    required=False,
+    default=(
+        "  {city}\n"
+        "{weatherIcon} {weatherDesc}\n"
+        "  {temperature}({temperatureFeel})\n"
+        "  {windDirection} {windSpeed}({windGust})'}\n"
+        "  {humidity}\n"
+        "  {time}"
+    ),
+)
 @interrupt_decorator(lambda: print("Interrupted!\nexiting..."))
-def main(api_key: str, location: str, units: str, format: str):
+def main(
+    api_key: str,
+    location: str,
+    units: str,
+    as_text: bool,
+    text_format: str,
+    tooltip_format: str,
+):
     weather = Weather(api_key, location, Unit(units))
     weather.refresh()
-    weather.print(format)
+    weather.print(as_text, text_format, tooltip_format)
 
 
 if __name__ == "__main__":
