@@ -1,8 +1,8 @@
 import json
 import sys
+from datetime import datetime
 from enum import Enum
 from time import sleep
-from datetime import datetime
 
 import click
 import requests
@@ -31,6 +31,8 @@ class Unit(Enum):
 
 
 class Weather:
+    """Get and process weather data from the OpenWeather api"""
+
     class Temperature:
         def __init__(self, raw_data, units: Unit):
             self.temp: float = raw_data["main"]["temp"]
@@ -88,20 +90,44 @@ class Weather:
         self.error = None
 
     def request(self):
+        """Get weather data form OpenWeather"""
         try:
             return requests.get(
                 f"https://api.openweathermap.org/data/2.5/weather?q={self.location}&appid={self.api_key}&units={self.units.value}"
             ).json()
-        except requests.exceptions.HTTPError:
+<<<<<<< HEAD
+        except requests.exceptions.HTTPError as HErr:
             self.error = "Http Error"
-        except requests.exceptions.ConnectionError:
+            self.error_tooltip = str(HErr) 
+        except requests.exceptions.ConnectionError as CErr:
             self.error = "Connection Error"
-        except requests.exceptions.Timeout:
+            self.error_tooltip = str(CErr) 
+        except requests.exceptions.Timeout as TErr:
             self.error = "Timeout Error"
-        except requests.exceptions.RequestException:
+            self.error_tooltip = str(TErr) 
+        except requests.exceptions.RequestException as RErr:
             self.error = "Error"
+            self.error_tooltip = str(RErr) 
+
+=======
+        # In case of error self.text becomes self.error -> see def print()
+        # In case of error self.tooltip becomes self.error_tooltip -> see def print()
+        except requests.exceptions.HTTPError as HErr:
+            self.error = "Http Error"
+            self.error_tooltip = str(HErr)
+        except requests.exceptions.ConnectionError as CErr:
+            self.error = "Connection Error"
+            self.error_tooltip = str(CErr)
+        except requests.exceptions.Timeout as TErr:
+            self.error = "Timeout Error"
+            self.error_tooltip = str(TErr)
+        except requests.exceptions.RequestException as RErr:
+            self.error = "Error"
+            self.error_tooltip = str(RErr)
+>>>>>>> e13d268 (Add config option to weather script)
 
     def get_weather(self, raw_data):
+        """Get weather from API data"""
         if raw_data:
             if raw_data["cod"] == 200:
                 self.city = raw_data["name"]
@@ -110,7 +136,8 @@ class Weather:
                 self.weather = self.Weather(raw_data)
                 self.wind = self.Wind(raw_data)
             else:
-                self.error = f"{raw_data['cod']}: {raw_data['message'] if raw_data['message'] else 'Something went wrong'}"
+                self.error = f"Error: {raw_data['cod']}"
+                self.error_tooltip = f"{raw_data['message'] if raw_data['message'] else 'Something went wrong'}"
 
     def refresh(self):
         self.get_weather(self.request())
@@ -121,14 +148,26 @@ class Weather:
         text_format: str,
         tooltip_format: str,
     ):
+        """Replace format options with data and print text and tooltip as json or normal text"""
         if self.error:
             if as_text is True:
                 if self.error:
-                    print(self.error, flush=True)
+<<<<<<< HEAD
+                    print(self.error,self.error_tooltip, flush=True)
+                    
+            else:
+                if self.error:
+                    print(json.dumps({"text": self.error, "tooltip": self.error_tooltip}), flush=True)
+=======
+                    print(self.error, self.error_tooltip, flush=True)
 
             else:
                 if self.error:
-                    print(json.dumps({"text": self.error}), flush=True)
+                    print(
+                        json.dumps({"text": self.error, "tooltip": self.error_tooltip}),
+                        flush=True,
+                    )
+>>>>>>> e13d268 (Add config option to weather script)
 
         else:
             format_options = {
@@ -148,6 +187,7 @@ class Weather:
                 if self.wind.gust
                 else "",
             }
+            # Replace format options with data
             for opt in format_options:
                 text_format = text_format.replace(opt, format_options[opt])
                 tooltip_format = tooltip_format.replace(opt, format_options[opt])
@@ -173,13 +213,13 @@ class Weather:
 @click.option(
     "--api-key",
     "-k",
-    required=True,
+    required=False,
     help="API key to use for the request",
 )
 @click.option(
     "--location",
     "-l",
-    required=True,
+    required=False,
     help="Location",
 )
 @click.option(
@@ -187,7 +227,6 @@ class Weather:
     "-u",
     help="Chose which units to use. standard: Kelvin, metric: Celsius, imperial: Fahrenheit",
     type=click.Choice([unit.value for unit in Unit]),
-    default=Unit.METRIC.value,
     required=False,
 )
 @click.option(
@@ -195,7 +234,6 @@ class Weather:
     "-i",
     help="Refresh interval. Set to 0 to get weather and exit",
     required=False,
-    default=300,
     type=int,
 )
 @click.option(
@@ -210,21 +248,26 @@ class Weather:
     help="Specify format for text",
     type=str,
     required=False,
-    default="{temperature} {weatherIcon}",
 )
 @click.option(
     "--tooltip-format",
     help="Specify format for tooltip",
     type=str,
     required=False,
-    default=(
-        "  {city}\n"
-        "{weatherIcon} {weatherDesc}\n"
-        "  {temperature}({temperatureFeel})\n"
-        "  {windDirection} {windSpeed}({windGust})'}\n"
-        "  {humidity}\n"
-        "  {time}"
-    ),
+)
+@click.option(
+    "--config-file",
+    "-c",
+    help="Path to config file",
+    type=click.File("r"),
+    required=False,
+)
+@click.option(
+    "--config-file",
+    "-c",
+    help="Path to config file",
+    type=click.File("r"),
+    required=False,
 )
 @interrupt_decorator(lambda: print("Interrupted!\nexiting..."))
 def main(
@@ -232,14 +275,50 @@ def main(
     location: str,
     units: str,
     interval: int,
-    as_text: bool,
     text_format: str,
     tooltip_format: str,
+    config_file,
+    as_text: bool,
 ):
+    # get options from config file
+<<<<<<< HEAD
+    # use 'and not ...' to use flag instead of config
+=======
+    # use 'and not ...' to use flag instead of config when flag is used
+>>>>>>> e13d268 (Add config option to weather script)
+    if config_file:
+        config = json.load(config_file)
+        if config["api_key"] and not api_key:
+            api_key: str = config["api_key"]
+        if config["location"] and not location:
+            location: str = config["location"]
+        if config["units"] and not units:
+            units: str = config["units"]
+        if config["interval"] and not interval:
+            interval = config["interval"]
+        if config["text_format"] and not text_format:
+            text_format: str = config["text_format"]
+        if config["tooltip_format"] and not tooltip_format:
+            tooltip_format: str = config["tooltip_format"]
+        if config["as_text"] and not as_text:
+            as_text: bool = config["as_text"]
+
+<<<<<<< HEAD
+    if not api_key:
+        api_key = input("API key: ")
+=======
+    # Prompt for API key if not provided
+    if not api_key:
+        api_key = input("API key: ")
+    # Prompt for location if not provided
+>>>>>>> e13d268 (Add config option to weather script)
+    if not location:
+        location = input("Location: ")
+
+    weather = Weather(api_key=api_key, location=location, units=Unit(units))
     while True:
-        weather = Weather(api_key, location, Unit(units))
         weather.refresh()
-        weather.print(as_text, text_format, tooltip_format)
+        weather.print(as_text, text_format=text_format, tooltip_format=tooltip_format)
         if interval == 0:
             sys.exit()
         sleep(interval)

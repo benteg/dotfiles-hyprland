@@ -39,7 +39,7 @@
     "interval": "once"
   },
   "custom/weather": {
-    "exec": "python3 ~/.config/waybar/scripts/weather.py -k 6d5213c7b30caa1bee049e24db642eb0 --location karlsruhe --interval 300",
+    "exec": "python3 ~/.config/waybar/scripts/weather.py -c ~/.config/waybar/weather_config.json",
     "return-type": "json",
     "format": "{}"
   },
