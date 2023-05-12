@@ -95,21 +95,6 @@ class Weather:
             return requests.get(
                 f"https://api.openweathermap.org/data/2.5/weather?q={self.location}&appid={self.api_key}&units={self.units.value}"
             ).json()
-<<<<<<< HEAD
-        except requests.exceptions.HTTPError as HErr:
-            self.error = "Http Error"
-            self.error_tooltip = str(HErr) 
-        except requests.exceptions.ConnectionError as CErr:
-            self.error = "Connection Error"
-            self.error_tooltip = str(CErr) 
-        except requests.exceptions.Timeout as TErr:
-            self.error = "Timeout Error"
-            self.error_tooltip = str(TErr) 
-        except requests.exceptions.RequestException as RErr:
-            self.error = "Error"
-            self.error_tooltip = str(RErr) 
-
-=======
         # In case of error self.text becomes self.error -> see def print()
         # In case of error self.tooltip becomes self.error_tooltip -> see def print()
         except requests.exceptions.HTTPError as HErr:
@@ -124,7 +109,6 @@ class Weather:
         except requests.exceptions.RequestException as RErr:
             self.error = "Error"
             self.error_tooltip = str(RErr)
->>>>>>> e13d268 (Add config option to weather script)
 
     def get_weather(self, raw_data):
         """Get weather from API data"""
@@ -152,13 +136,6 @@ class Weather:
         if self.error:
             if as_text is True:
                 if self.error:
-<<<<<<< HEAD
-                    print(self.error,self.error_tooltip, flush=True)
-                    
-            else:
-                if self.error:
-                    print(json.dumps({"text": self.error, "tooltip": self.error_tooltip}), flush=True)
-=======
                     print(self.error, self.error_tooltip, flush=True)
 
             else:
@@ -167,7 +144,17 @@ class Weather:
                         json.dumps({"text": self.error, "tooltip": self.error_tooltip}),
                         flush=True,
                     )
->>>>>>> e13d268 (Add config option to weather script)
+
+                    print(self.error, self.error_tooltip, flush=True)
+
+                else:
+                    if self.error:
+                        print(
+                            json.dumps(
+                                {"text": self.error, "tooltip": self.error_tooltip}
+                            ),
+                            flush=True,
+                        )
 
         else:
             format_options = {
@@ -281,11 +268,7 @@ def main(
     as_text: bool,
 ):
     # get options from config file
-<<<<<<< HEAD
-    # use 'and not ...' to use flag instead of config
-=======
     # use 'and not ...' to use flag instead of config when flag is used
->>>>>>> e13d268 (Add config option to weather script)
     if config_file:
         config = json.load(config_file)
         if config["api_key"] and not api_key:
@@ -303,15 +286,10 @@ def main(
         if config["as_text"] and not as_text:
             as_text: bool = config["as_text"]
 
-<<<<<<< HEAD
-    if not api_key:
-        api_key = input("API key: ")
-=======
     # Prompt for API key if not provided
     if not api_key:
         api_key = input("API key: ")
     # Prompt for location if not provided
->>>>>>> e13d268 (Add config option to weather script)
     if not location:
         location = input("Location: ")
 
