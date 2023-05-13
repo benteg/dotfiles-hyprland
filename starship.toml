@@ -12,6 +12,7 @@ $git_status\
 $git_metrics\
 """
 right_format="""
+$git_state\
 $time\
 """
 add_newline = false
