@@ -85,7 +85,7 @@ disabled = false
 disabled = false
 format = '[$time]($style)'
 time_format = '%R'
-style = 'bold surface2'
+style = 'bold overlay0'
 
 [line_break]
 disabled = false
