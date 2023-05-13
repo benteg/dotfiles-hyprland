@@ -48,7 +48,7 @@ crust = '#181926'
 [character]
 format = '$symbol  '
 success_symbol = '[](bold green)'
-error_symbol = '[](bold red)'
+error_symbol = '[✘](bold red)'
 
 [username]
 style_user = 'bold blue'
