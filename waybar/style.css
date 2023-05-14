@@ -127,3 +127,8 @@ tooltip * {
 #battery.discharging.critical {
   color: @red;
 }
+
+#cpu.highLoad,
+#memory.highLoad {
+  color: @red;
+}
