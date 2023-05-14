@@ -32,57 +32,6 @@ class Unit(Enum):
 
 class Weather:
     """Get and process weather data from the OpenWeather api"""
-
-    class Temperature:
-        def __init__(self, raw_data, units: Unit):
-            self.temp: float = raw_data["main"]["temp"]
-            self.feel: float = raw_data["main"]["feels_like"]
-            self.min: float = raw_data["main"]["temp_min"]
-            self.max: float = raw_data["main"]["temp_max"]
-            if units == Unit.METRIC:
-                self.unit = "°C"
-            elif units == Unit.IMPERIAL:
-                self.unit = "°F"
-            elif units == Unit.STANDARD:
-                self.unit = " K"
-            else:
-                self.unit = ""
-
-    class Wind:
-        def __init__(self, raw_data):
-            self.speed = raw_data["wind"]["speed"]
-            self.direction = raw_data["wind"]["deg"]
-            self.icon = [
-                "↑",
-                "↗",
-                "→",
-                "↘",
-                "↓",
-                "↙",
-                "←",
-                "↖",
-            ][self.direction // 45 % 8]
-            try:
-                self.gust = raw_data["wind"]["gust"]
-            except KeyError:
-                self.gust = None
-            self.unit = "m/s"
-
-    class Weather:
-        def __init__(self, raw_data):
-            self.main = raw_data["weather"][0]["main"]
-            self.desc = raw_data["weather"][0]["description"]
-            self.humid = raw_data["main"]["humidity"]
-            self.icon = {
-                "Thunderstorm": "",
-                "Drizzle": "",
-                "Rain": "",
-                "Snow": "",
-                "Clear": "",
-                "Clouds": "",
-            }[self.main]
-            self.unit = "%"
-
     def __init__(self, api_key, location, units: Unit):
         self.api_key: str = api_key
         self.location: str = location
@@ -116,9 +65,60 @@ class Weather:
             if raw_data["cod"] == 200:
                 self.city = raw_data["name"]
                 self.datetime = datetime.fromtimestamp(raw_data["dt"]).strftime("%H:%M")
-                self.temperature = self.Temperature(raw_data, self.units)
-                self.weather = self.Weather(raw_data)
-                self.wind = self.Wind(raw_data)
+                self.temperature: float = raw_data["main"]["temp"]
+                self.temperature_feel: float = raw_data["main"]["feels_like"]
+                self.temperature_min: float = raw_data["main"]["temp_min"]
+                self.temperature_max: float = raw_data["main"]["temp_max"]
+                if self.units == Unit.METRIC:
+                    self.temperature_unit = "°C"
+                elif self.units == Unit.IMPERIAL:
+                    self.temperature_unit = "°F"
+                elif self.units == Unit.STANDARD:
+                    self.temperature_unit = " K"
+                else:
+                    self.temperature_unit = ""
+                
+                self.wind_speed = raw_data["wind"]["speed"]
+                self.wind_direction = raw_data["wind"]["deg"]
+                self.wind_direction_icon = [
+                    "↑",
+                    "↗",
+                    "→",
+                    "↘",
+                    "↓",
+                    "↙",
+                    "←",
+                    "↖",
+                ][self.wind_direction // 45 % 8]
+                self.wind_direction_text = [
+                    "N",
+                    "NE",
+                    "E",
+                    "SE",
+                    "S",
+                    "SW",
+                    "W",
+                    "NW",
+                ][self.wind_direction // 45 % 8]
+                try:
+                    self.wind_gust = raw_data["wind"]["gust"]
+                except KeyError:
+                    self.wind_gust = None
+                self.wind_unit = "m/s"
+
+                self.weather = raw_data["weather"][0]["main"]
+                self.weather_desc = raw_data["weather"][0]["description"]
+                self.weather_humid = raw_data["main"]["humidity"]
+                self.weather_icon = {
+                    "Thunderstorm": "",
+                    "Drizzle": "",
+                    "Rain": "",
+                    "Snow": "",
+                    "Clear": "",
+                    "Clouds": "",
+                }[self.weather]
+                self.weather_unit = "%"
+
             else:
                 self.error = f"Error: {raw_data['cod']}"
                 self.error_tooltip = f"{raw_data['message'] if raw_data['message'] else 'Something went wrong'}"
@@ -159,25 +159,30 @@ class Weather:
         else:
             format_options = {
                 "{city}": self.city,
-                "{humidity}": f"{round(self.weather.humid, ndigits=1)}{self.weather.unit}",
-                "{temperature}": f"{round(self.temperature.temp, ndigits=1)}{self.temperature.unit}",
-                "{temperatureFeel}": f"{round(self.temperature.feel, ndigits=1)}{self.temperature.unit}",
-                "{temperatureMin}": f"{round(self.temperature.min, ndigits=1)}{self.temperature.unit}",
-                "{temperatureMax}": f"{round(self.temperature.max, ndigits=1)}{self.temperature.unit}",
+                "{humidity}": f"{round(self.weather_humid, ndigits=1)}{self.weather_unit}",
+                "{temperature}": f"{round(self.temperature, ndigits=1)}{self.temperature_unit}",
+                "{temperatureFeel}": f"{round(self.temperature_feel, ndigits=1)}{self.temperature_unit}",
+                "{temperatureMin}": f"{round(self.temperature_min, ndigits=1)}{self.temperature_unit}",
+                "{temperatureMax}": f"{round(self.temperature_max, ndigits=1)}{self.temperature_unit}",
                 "{time}": self.datetime,
-                "{weather}": self.weather.main,
-                "{weatherIcon}": self.weather.icon,
-                "{weatherDesc}": self.weather.desc.title(),
-                "{windDirection}": self.wind.icon,
-                "{windSpeed}": f"{round(self.wind.speed)}{self.wind.unit}",
-                "{windGust}": f"{round(self.wind.gust)}{self.wind.unit}"
-                if self.wind.gust
+                "{weather}": self.weather,
+                "{weatherIcon}": self.weather_icon,
+                "{weatherDesc}": self.weather_desc.title(),
+                "{windDirection}": str(self.wind_direction),
+                "{windDirectionIcon}": self.wind_direction_icon,
+                "{windDirectionText}": self.wind_direction_text,
+                "{windSpeed}": f"{round(self.wind_speed)}{self.wind_unit}",
+                "{windGust}": f"{round(self.wind_gust)}{self.wind_unit}"
+                if self.wind_gust
                 else "",
             }
             # Replace format options with data
             for opt in format_options:
-                text_format = text_format.replace(opt, format_options[opt])
-                tooltip_format = tooltip_format.replace(opt, format_options[opt])
+                try:
+                    text_format = text_format.replace(opt, format_options[opt])
+                    tooltip_format = tooltip_format.replace(opt, format_options[opt])
+                except AttributeError:
+                    pass
             self.text = text_format
             self.tooltip = tooltip_format
 
@@ -292,6 +297,13 @@ def main(
     # Prompt for location if not provided
     if not location:
         location = input("Location: ")
+    #Default fallbacks
+    if not units:
+        units = "metric"
+    if not interval:
+        interval = 0
+    if not text_format:
+        text_format = "{temperature}"
 
     weather = Weather(api_key=api_key, location=location, units=Unit(units))
     while True:
