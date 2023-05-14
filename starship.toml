@@ -1,8 +1,6 @@
 palette = 'catppuccin_macchiato'
 
 format = """
-$cmd_duration\
-$line_break\
 $username\
 $character\
 $directory\
