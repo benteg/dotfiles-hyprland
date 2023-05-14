@@ -32,6 +32,7 @@ class Unit(Enum):
 
 class Weather:
     """Get and process weather data from the OpenWeather api"""
+
     def __init__(self, api_key, location, units: Unit):
         self.api_key: str = api_key
         self.location: str = location
@@ -77,7 +78,6 @@ class Weather:
                     self.temperature_unit = " K"
                 else:
                     self.temperature_unit = ""
-                
                 self.wind_speed = raw_data["wind"]["speed"]
                 self.wind_direction = raw_data["wind"]["deg"]
                 self.wind_direction_icon = [
@@ -297,7 +297,7 @@ def main(
     # Prompt for location if not provided
     if not location:
         location = input("Location: ")
-    #Default fallbacks
+    # Default fallbacks
     if not units:
         units = "metric"
     if not interval:
