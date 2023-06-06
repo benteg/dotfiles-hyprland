@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime
 from enum import Enum
 from time import sleep
@@ -17,7 +18,7 @@ def interrupt_decorator(handler):
                 func(*args, **kwargs)
             except KeyboardInterrupt:
                 handler()
-                exit()
+                sys.exit(0)
 
         return wrapper
 
@@ -131,8 +132,8 @@ class Weather:
     def print(
         self,
         out_format: bool,
+        title_format: str,
         text_format: str,
-        tooltip_format: str,
     ):
         """Replace format options with data and print text and tooltip as json or normal text"""
         if self.error:
@@ -186,14 +187,14 @@ class Weather:
             # Replace format options with data
             for opt in format_options:
                 try:
-                    text_format = text_format.replace(opt, format_options[opt])
-                    tooltip_format = tooltip_format.replace(
+                    title_format = title_format.replace(opt, format_options[opt])
+                    text_format = text_format.replace(
                         opt, format_options[opt]
                     )
                 except AttributeError:
                     pass
-            self.text = text_format
-            self.tooltip = tooltip_format
+            self.text = title_format
+            self.tooltip = text_format
 
             if out_format is True:
                 print(
@@ -250,14 +251,14 @@ class Weather:
     help="Print output as plain text or in json format. [default: json]",
 )
 @click.option(
-    "--text-format",
-    help="Specify format text. [default: {temperature}]",
+    "--title-format",
+    help="Specify format for title. [default: {temperature}]",
     type=str,
     metavar="FORMAT",
 )
 @click.option(
-    "--tooltip-format",
-    help="Specify format for tooltip. [default: {city}]",
+    "--text-format",
+    help="Specify format for text. [default: {city}]",
     type=str,
     metavar="FORMAT",
 )
@@ -268,8 +269,8 @@ def main(
     location: str,  # type: ignore
     units: str,  # type: ignore
     interval: int,
+    title_format: str,
     text_format: str,
-    tooltip_format: str,
     out_format: bool,
 ):
     # Get parameters
@@ -297,16 +298,16 @@ def main(
             interval = config["interval"]
         except KeyError:
             interval = 0
+    if not title_format:
+        try:
+            title_format = config["title_format"]
+        except KeyError:
+            title_format = "{temperature}"
     if not text_format:
         try:
             text_format = config["text_format"]
         except KeyError:
-            text_format = "{temperature}"
-    if not tooltip_format:
-        try:
-            tooltip_format = config["tooltip_format"]
-        except KeyError:
-            tooltip_format = "{city}"
+            text_format = "{city}"
     if out_format is None:
         try:
             out_format = config["out_format"]
@@ -318,11 +319,11 @@ def main(
         weather.refresh()
         weather.print(
             out_format,
+            title_format=title_format,
             text_format=text_format,
-            tooltip_format=tooltip_format,
         )
         if interval == 0:
-            exit()
+            sys.exit()
         sleep(interval)
 
 
