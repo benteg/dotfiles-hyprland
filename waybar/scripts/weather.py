@@ -1,8 +1,8 @@
 import json
-import sys
 from datetime import datetime
 from enum import Enum
 from time import sleep
+from typing import Any, TextIO
 
 import click
 import requests
@@ -17,7 +17,7 @@ def interrupt_decorator(handler):
                 func(*args, **kwargs)
             except KeyboardInterrupt:
                 handler()
-                sys.exit(0)
+                exit()
 
         return wrapper
 
@@ -65,7 +65,9 @@ class Weather:
         if raw_data:
             if raw_data["cod"] == 200:
                 self.city = raw_data["name"]
-                self.datetime = datetime.fromtimestamp(raw_data["dt"]).strftime("%H:%M")
+                self.datetime = datetime.fromtimestamp(
+                    raw_data["dt"]
+                ).strftime("%H:%M")
                 self.temperature: float = raw_data["main"]["temp"]
                 self.temperature_feel: float = raw_data["main"]["feels_like"]
                 self.temperature_min: float = raw_data["main"]["temp_min"]
@@ -128,20 +130,22 @@ class Weather:
 
     def print(
         self,
-        as_text: bool,
+        out_format: bool,
         text_format: str,
         tooltip_format: str,
     ):
         """Replace format options with data and print text and tooltip as json or normal text"""
         if self.error:
-            if as_text is True:
+            if out_format is True:
                 if self.error:
                     print(self.error, self.error_tooltip, flush=True)
 
             else:
                 if self.error:
                     print(
-                        json.dumps({"text": self.error, "tooltip": self.error_tooltip}),
+                        json.dumps(
+                            {"text": self.error, "tooltip": self.error_tooltip}
+                        ),
                         flush=True,
                     )
 
@@ -151,7 +155,10 @@ class Weather:
                     if self.error:
                         print(
                             json.dumps(
-                                {"text": self.error, "tooltip": self.error_tooltip}
+                                {
+                                    "text": self.error,
+                                    "tooltip": self.error_tooltip,
+                                }
                             ),
                             flush=True,
                         )
@@ -180,13 +187,15 @@ class Weather:
             for opt in format_options:
                 try:
                     text_format = text_format.replace(opt, format_options[opt])
-                    tooltip_format = tooltip_format.replace(opt, format_options[opt])
+                    tooltip_format = tooltip_format.replace(
+                        opt, format_options[opt]
+                    )
                 except AttributeError:
                     pass
             self.text = text_format
             self.tooltip = tooltip_format
 
-            if as_text is True:
+            if out_format is True:
                 print(
                     self.text,
                     self.tooltip,
@@ -204,113 +213,123 @@ class Weather:
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     "--api-key",
-    "-k",
-    required=False,
-    help="API key to use for the request",
+    "-a",
+    help="API key to use for the request.",
+    metavar="KEY",
 )
 @click.option(
-    "--location",
-    "-l",
-    required=False,
-    help="Location",
-)
-@click.option(
-    "--units",
-    "-u",
-    help="Chose which units to use. standard: Kelvin, metric: Celsius, imperial: Fahrenheit",
-    type=click.Choice([unit.value for unit in Unit]),
-    required=False,
+    "--config-file",
+    "-c",
+    help="Path to config file.",
+    type=click.File("r"),
 )
 @click.option(
     "--interval",
     "-i",
-    help="Refresh interval. Set to 0 to get weather and exit",
-    required=False,
+    help="Refresh interval; set to 0 to get weather and exit. [default: 0]",
     type=int,
+    metavar="SECONDS",
 )
 @click.option(
-    "--as-text",
+    "--location",
+    "-l",
+    help="Location to get the weather for",
+    metavar="CITY",
+)
+@click.option(
+    "--units",
+    "-u",
+    help="Which units to use. standard: Kelvin(K), metric: Celsius(°C), imperial: Fahrenheit(°C). [default: metric]",
+    type=click.Choice([unit.value for unit in Unit], case_sensitive=False),
+)
+@click.option(
+    "--text/--json",
+    "-t/-j",
+    "out_format",
     is_flag=True,
-    default=False,
-    required=False,
-    help="Print output as plain text",
+    help="Print output as plain text or in json format. [default: json]",
 )
 @click.option(
     "--text-format",
-    help="Specify format for text",
+    help="Specify format text. [default: {temperature}]",
     type=str,
-    required=False,
+    metavar="FORMAT",
 )
 @click.option(
     "--tooltip-format",
-    help="Specify format for tooltip",
+    help="Specify format for tooltip. [default: {city}]",
     type=str,
-    required=False,
-)
-@click.option(
-    "--config-file",
-    "-c",
-    help="Path to config file",
-    type=click.File("r"),
-    required=False,
-)
-@click.option(
-    "--config-file",
-    "-c",
-    help="Path to config file",
-    type=click.File("r"),
-    required=False,
+    metavar="FORMAT",
 )
 @interrupt_decorator(lambda: print("Interrupted!\nexiting..."))
 def main(
-    api_key: str,
-    location: str,
-    units: str,
+    config_file: TextIO,
+    api_key: str,  # type: ignore
+    location: str,  # type: ignore
+    units: str,  # type: ignore
     interval: int,
     text_format: str,
     tooltip_format: str,
-    config_file,
-    as_text: bool,
+    out_format: bool,
 ):
-    # get options from config file
-    # use 'and not ...' to use flag instead of config when flag is used
+    # get options from config but use flag over config
     if config_file:
-        config = json.load(config_file)
-        if config["api_key"] and not api_key:
-            api_key: str = config["api_key"]
-        if config["location"] and not location:
-            location: str = config["location"]
-        if config["units"] and not units:
-            units: str = config["units"]
-        if config["interval"] and not interval:
-            interval = config["interval"]
-        if config["text_format"] and not text_format:
-            text_format: str = config["text_format"]
-        if config["tooltip_format"] and not tooltip_format:
-            tooltip_format: str = config["tooltip_format"]
-        if config["as_text"] and not as_text:
-            as_text: bool = config["as_text"]
+        config: dict[str, Any] = json.load(config_file)
 
-    # Prompt for API key if not provided
-    if not api_key:
-        api_key = input("API key: ")
-    # Prompt for location if not provided
-    if not location:
-        location = input("Location: ")
-    # Default fallbacks
-    if not units:
-        units = "metric"
-    if not interval:
-        interval = 0
-    if not text_format:
-        text_format = "{temperature}"
+        if not api_key:
+            try:
+                api_key: str = config["api_key"]
+            except KeyError:
+                pass
+        if not location:
+            try:
+                location: str = config["location"]
+            except KeyError:
+                pass
+        if not units:
+            try:
+                units: str = config["units"]
+            except KeyError:
+                pass
+        if interval is None:
+            try:
+                interval = config["interval"]
+            except KeyError:
+                pass
+        if not text_format:
+            try:
+                text_format = config["text_format"]
+            except KeyError:
+                pass
+        if not tooltip_format:
+            try:
+                tooltip_format = config["tooltip_format"]
+            except KeyError:
+                pass
+        if not out_format:
+            try:
+                out_format = config["out_format"]
+            except KeyError:
+                pass
+
+    # fallback values or prompt for value
+    api_key = input("API key: ")
+    location = input("Location: ")
+    units = "metric"
+    interval = 0
+    text_format = "{temperature}"
+    tooltip_format = "{city}"
 
     weather = Weather(api_key=api_key, location=location, units=Unit(units))
     while True:
         weather.refresh()
-        weather.print(as_text, text_format=text_format, tooltip_format=tooltip_format)
+        weather.print(
+            out_format=out_format,
+            text_format=text_format,
+            tooltip_format=tooltip_format,
+        )
         if interval == 0:
-            sys.exit()
+            exit()
         sleep(interval)
 
 
