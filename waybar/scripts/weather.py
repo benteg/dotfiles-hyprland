@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import json
 from datetime import datetime
 from enum import Enum
 from time import sleep
-from typing import Any, TextIO
+from typing import Any, Callable, TextIO
 
 import click
 import requests
@@ -10,7 +12,7 @@ import requests
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-def interrupt_decorator(handler):
+def interrupt_decorator(handler) -> Callable:
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -39,7 +41,7 @@ class Weather:
         self.units: Unit = units
         self.error = None
 
-    def request(self):
+    def request(self) -> None:
         """Get weather data form OpenWeather"""
         try:
             return requests.get(
@@ -60,7 +62,7 @@ class Weather:
             self.error = "Error"
             self.error_tooltip = str(RErr)
 
-    def get_weather(self, raw_data):
+    def get_weather(self, raw_data) -> None:
         """Get weather from API data"""
         if raw_data:
             if raw_data["cod"] == 200:
@@ -125,15 +127,15 @@ class Weather:
                 self.error = f"Error: {raw_data['cod']}"
                 self.error_tooltip = f"{raw_data['message'] if raw_data['message'] else 'Something went wrong'}"
 
-    def refresh(self):
+    def refresh(self) -> None:
         self.get_weather(self.request())
 
     def print(
         self,
-        out_format: bool, # True is output as text, False is output as json
+        out_format: bool,  # True is output as text, False is output as json
         title_format: str,
         text_format: str,
-    ):
+    ) -> None:
         """Replace format options with data and print text and tooltip as json or normal text"""
         if self.error:
             if out_format is True:
@@ -186,10 +188,10 @@ class Weather:
             # Replace format options with data
             for opt in format_options:
                 try:
-                    title_format = title_format.replace(opt, format_options[opt])
-                    text_format = text_format.replace(
+                    title_format = title_format.replace(
                         opt, format_options[opt]
                     )
+                    text_format = text_format.replace(opt, format_options[opt])
                 except AttributeError:
                     pass
             self.text = title_format
@@ -271,12 +273,14 @@ def main(
     title_format: str,
     text_format: str,
     out_format: bool,
-):
+) -> None:
     # Get parameters
     # flags are used over config
     # no flag or config results in fallback value
     if config:
-        config: dict[str, Any] = json.load(config) or {}
+        config: dict[str, Any] = json.load(config)
+    else:
+        config = {}
     if not api_key:
         try:
             api_key: str = config["api_key"]
