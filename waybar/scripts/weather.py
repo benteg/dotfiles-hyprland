@@ -218,7 +218,7 @@ class Weather:
     metavar="KEY",
 )
 @click.option(
-    "--config-file",
+    "--config",
     "-c",
     help="Path to config file.",
     type=click.File("r"),
@@ -263,7 +263,7 @@ class Weather:
 )
 @interrupt_decorator(lambda: print("Interrupted!\nexiting..."))
 def main(
-    config_file: TextIO,
+    config,  # type: ignore
     api_key: str,  # type: ignore
     location: str,  # type: ignore
     units: str,  # type: ignore
@@ -272,59 +272,52 @@ def main(
     tooltip_format: str,
     out_format: bool,
 ):
-    # get options from config but use flag over config
-    if config_file:
-        config: dict[str, Any] = json.load(config_file)
-
-        if not api_key:
-            try:
-                api_key: str = config["api_key"]
-            except KeyError:
-                pass
-        if not location:
-            try:
-                location: str = config["location"]
-            except KeyError:
-                pass
-        if not units:
-            try:
-                units: str = config["units"]
-            except KeyError:
-                pass
-        if interval is None:
-            try:
-                interval = config["interval"]
-            except KeyError:
-                pass
-        if not text_format:
-            try:
-                text_format = config["text_format"]
-            except KeyError:
-                pass
-        if not tooltip_format:
-            try:
-                tooltip_format = config["tooltip_format"]
-            except KeyError:
-                pass
-        if not out_format:
-            try:
-                out_format = config["out_format"]
-            except KeyError:
-                pass
-
-    # fallback values or prompt for value
-    api_key = input("API key: ")
-    location = input("Location: ")
-    units = "metric"
-    interval = 0
-    text_format = "{temperature}"
-    tooltip_format = "{city}"
+    # Get parameters
+    # flags are used over config
+    # no flag or config results in fallback value
+    if config:
+        config: dict[str, Any] = json.load(config) or {}
+    if not api_key:
+        try:
+            api_key: str = config["api_key"]
+        except KeyError:
+            api_key = input("API key: ")
+    if not location:
+        try:
+            location: str = config["location"]
+        except KeyError:
+            location = input("Location: ")
+    if not units:
+        try:
+            units: str = config["units"]
+        except KeyError:
+            units = "metric"
+    if interval is None:
+        try:
+            interval = config["interval"]
+        except KeyError:
+            interval = 0
+    if not text_format:
+        try:
+            text_format = config["text_format"]
+        except KeyError:
+            text_format = "{temperature}"
+    if not tooltip_format:
+        try:
+            tooltip_format = config["tooltip_format"]
+        except KeyError:
+            tooltip_format = "{city}"
+    if out_format is None:
+        try:
+            out_format = config["out_format"]
+        except KeyError:
+            out_format = False
 
     weather = Weather(api_key=api_key, location=location, units=Unit(units))
     while True:
         weather.refresh()
         weather.print(
-            out_format=out_format,
+            out_format,
             text_format=text_format,
             tooltip_format=tooltip_format,
         )
