@@ -1,5 +1,4 @@
 import json
-import sys
 from datetime import datetime
 from enum import Enum
 from time import sleep
@@ -18,7 +17,7 @@ def interrupt_decorator(handler):
                 func(*args, **kwargs)
             except KeyboardInterrupt:
                 handler()
-                sys.exit(0)
+                exit()
 
         return wrapper
 
@@ -131,7 +130,7 @@ class Weather:
 
     def print(
         self,
-        out_format: bool,
+        out_format: bool, # True is output as text, False is output as json
         title_format: str,
         text_format: str,
     ):
@@ -264,7 +263,7 @@ class Weather:
 )
 @interrupt_decorator(lambda: print("Interrupted!\nexiting..."))
 def main(
-    config,  # type: ignore
+    config: TextIO,  # type: ignore
     api_key: str,  # type: ignore
     location: str,  # type: ignore
     units: str,  # type: ignore
@@ -323,7 +322,7 @@ def main(
             text_format=text_format,
         )
         if interval == 0:
-            sys.exit()
+            exit()
         sleep(interval)
 
 
