@@ -67,13 +67,11 @@ class Weather:
         if raw_data:
             if raw_data["cod"] == 200:
                 self.city = raw_data["name"]
-                self.datetime = datetime.fromtimestamp(
-                    raw_data["dt"]
-                ).strftime("%H:%M")
-                self.temperature: float = raw_data["main"]["temp"]
-                self.temperature_feel: float = raw_data["main"]["feels_like"]
-                self.temperature_min: float = raw_data["main"]["temp_min"]
-                self.temperature_max: float = raw_data["main"]["temp_max"]
+                self.datetime = datetime.fromtimestamp(raw_data["dt"]).strftime("%H:%M")
+                self.temperature: int = round(raw_data["main"]["temp"])
+                self.temperature_feel: int = round(raw_data["main"]["feels_like"])
+                self.temperature_min: int = round(raw_data["main"]["temp_min"])
+                self.temperature_max: int = round(raw_data["main"]["temp_max"])
                 if self.units == Unit.METRIC:
                     self.temperature_unit = "°C"
                 elif self.units == Unit.IMPERIAL:
@@ -82,7 +80,7 @@ class Weather:
                     self.temperature_unit = " K"
                 else:
                     self.temperature_unit = ""
-                self.wind_speed = raw_data["wind"]["speed"]
+                self.wind_speed = round(raw_data["wind"]["speed"])
                 self.wind_direction = raw_data["wind"]["deg"]
                 self.wind_direction_icon = [
                     "↑",
@@ -105,7 +103,7 @@ class Weather:
                     "NW",
                 ][self.wind_direction // 45 % 8]
                 try:
-                    self.wind_gust = raw_data["wind"]["gust"]
+                    self.wind_gust = round(raw_data["wind"]["gust"])
                 except KeyError:
                     self.wind_gust = None
                 self.wind_unit = "m/s"
@@ -145,9 +143,7 @@ class Weather:
             else:
                 if self.error:
                     print(
-                        json.dumps(
-                            {"text": self.error, "tooltip": self.error_tooltip}
-                        ),
+                        json.dumps({"text": self.error, "tooltip": self.error_tooltip}),
                         flush=True,
                     )
 
@@ -168,11 +164,11 @@ class Weather:
         else:
             format_options = {
                 "{city}": self.city,
-                "{humidity}": f"{round(self.weather_humid, ndigits=1)}{self.weather_unit}",
-                "{temperature}": f"{round(self.temperature, ndigits=1)}{self.temperature_unit}",
-                "{temperatureFeel}": f"{round(self.temperature_feel, ndigits=1)}{self.temperature_unit}",
-                "{temperatureMin}": f"{round(self.temperature_min, ndigits=1)}{self.temperature_unit}",
-                "{temperatureMax}": f"{round(self.temperature_max, ndigits=1)}{self.temperature_unit}",
+                "{humidity}": f"{self.weather_humid}{self.weather_unit}",
+                "{temperature}": f"{self.temperature}{self.temperature_unit}",
+                "{temperatureFeel}": f"{self.temperature_feel}{self.temperature_unit}",
+                "{temperatureMin}": f"{self.temperature_min}{self.temperature_unit}",
+                "{temperatureMax}": f"{self.temperature_max}{self.temperature_unit}",
                 "{time}": self.datetime,
                 "{weather}": self.weather,
                 "{weatherIcon}": self.weather_icon,
@@ -180,17 +176,15 @@ class Weather:
                 "{windDirection}": str(self.wind_direction),
                 "{windDirectionIcon}": self.wind_direction_icon,
                 "{windDirectionText}": self.wind_direction_text,
-                "{windSpeed}": f"{round(self.wind_speed)}{self.wind_unit}",
-                "{windGust}": f"{round(self.wind_gust)}{self.wind_unit}"
+                "{windSpeed}": f"{self.wind_speed}{self.wind_unit}",
+                "{windGust}": f"{self.wind_gust}{self.wind_unit}"
                 if self.wind_gust
                 else "",
             }
             # Replace format options with data
             for opt in format_options:
                 try:
-                    title_format = title_format.replace(
-                        opt, format_options[opt]
-                    )
+                    title_format = title_format.replace(opt, format_options[opt])
                     text_format = text_format.replace(opt, format_options[opt])
                 except AttributeError:
                     pass
