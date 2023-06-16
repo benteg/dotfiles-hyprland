@@ -61,15 +61,14 @@ tooltip * {
   padding-right: 8px;
 }
 
+#wireplumber.loud {
+  color: @red;
+}
 #network.disabled,
 #network.disconnected,
 #wireplumber.off,
 #wireplumber.muted {
   color: @surface2;
-}
-
-#wireplumber.loud {
-  color: @red;
 }
 
 #memory,
@@ -131,4 +130,17 @@ tooltip * {
 #cpu.highLoad,
 #memory.highLoad {
   color: @red;
+}
+
+#custom-weather.cold {
+  color: @blue;
+}
+#custom-weather.warm {
+  color: @yellow;
+}
+#custom-weather.hot {
+  color: @red;
+}
+#custom-weather.hot {
+  color: @text;
 }

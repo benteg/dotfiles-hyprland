@@ -1,0 +1,7 @@
+timeout 120 "light -O && light -S 15" resume "light -I"
+timeout 300 "swaylockd"
+timeout 20 "pgrep swaylock && light -O && light -S 15" resume "light -I"
+timeout 600 "hyprctl dispatch dpms off" resume "hyprctl dispatch dpms on"
+
+before-sleep "swaylockd && hyprctl dispatch dpms off"
+after-resume "hyprctl dispatch dpms on"

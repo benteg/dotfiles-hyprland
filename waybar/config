@@ -40,6 +40,8 @@
   },
   "custom/weather": {
     "exec": "python3 ~/.config/waybar/scripts/weather.py -c ~/.config/waybar/weather_config.json",
+    "exec-on-event": false,
+    "on-click":"python3 ~/.config/waybar/scripts/weather.py --interval 0 --config ~/.config/waybar/weather_config.json",
     "return-type": "json",
     "format": "{}"
   },

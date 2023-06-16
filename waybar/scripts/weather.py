@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+import datetime
 from enum import Enum
 from time import sleep
 from typing import Any, Callable, TextIO
@@ -43,6 +43,7 @@ class Weather:
 
     def request(self) -> None:
         """Get weather data form OpenWeather"""
+        self.refreshed_at = datetime.datetime.now().strftime("%H:%M")
         try:
             return requests.get(
                 f"https://api.openweathermap.org/data/2.5/weather?q={self.location}&appid={self.api_key}&units={self.units.value}"
@@ -67,11 +68,22 @@ class Weather:
         if raw_data:
             if raw_data["cod"] == 200:
                 self.city = raw_data["name"]
-                self.datetime = datetime.fromtimestamp(raw_data["dt"]).strftime("%H:%M")
+                self.datetime = datetime.datetime.fromtimestamp(
+                    raw_data["dt"]
+                ).strftime("%H:%M")
                 self.temperature: int = round(raw_data["main"]["temp"])
                 self.temperature_feel: int = round(raw_data["main"]["feels_like"])
                 self.temperature_min: int = round(raw_data["main"]["temp_min"])
                 self.temperature_max: int = round(raw_data["main"]["temp_max"])
+                if self.temperature <= 10:
+                    self.css_class = "cold"
+                elif self.temperature >= 20:
+                    self.css_class = "warm"
+                elif self.temperature >= 30:
+                    self.css_class = "hot"
+                else:
+                    self.css_class = "regular"
+
                 if self.units == Unit.METRIC:
                     self.temperature_unit = "°C"
                 elif self.units == Unit.IMPERIAL:
@@ -170,6 +182,7 @@ class Weather:
                 "{temperatureMin}": f"{self.temperature_min}{self.temperature_unit}",
                 "{temperatureMax}": f"{self.temperature_max}{self.temperature_unit}",
                 "{time}": self.datetime,
+                "{refreshedAt}": self.refreshed_at,
                 "{weather}": self.weather,
                 "{weatherIcon}": self.weather_icon,
                 "{weatherDesc}": self.weather_desc.title(),
@@ -201,7 +214,13 @@ class Weather:
 
             else:
                 print(
-                    json.dumps({"text": self.text, "tooltip": self.tooltip}),
+                    json.dumps(
+                        {
+                            "text": self.text,
+                            "tooltip": self.tooltip,
+                            "class": self.css_class,
+                        }
+                    ),
                     flush=True,
                 )
 
