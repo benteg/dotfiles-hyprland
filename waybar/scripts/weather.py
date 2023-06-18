@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import datetime
+from dataclasses import dataclass
 from enum import Enum
 from time import sleep
-from typing import Any, Callable, TextIO
+from typing import Any, Callable, TextIO, Optional
 
 import click
 import requests
@@ -32,197 +33,223 @@ class Unit(Enum):
     IMPERIAL = "imperial"
 
 
+@dataclass
+class ValueWithSymbol:
+    value: Any
+    symbol: str
+
+    def __str__(self) -> str:
+        return f"{self.value}{self.symbol}"
+
+
+@dataclass
+class Temperature(ValueWithSymbol):
+    unit: Unit
+
+    def __str__(self) -> str:
+        if self.unit == Unit.METRIC:
+            self.symbol = "°C"
+        elif self.unit == Unit.IMPERIAL:
+            self.symbol = "°F"
+        elif self.unit == Unit.STANDARD:
+            self.symbol = " K"
+        return f"{self.value}{self.symbol}"
+
+
+@dataclass
 class Weather:
-    """Get and process weather data from the OpenWeather api"""
+    api_key: str
+    location: str
+    unit: Unit
+    error = None
+    error_message = None
+    css_class = "regular"
 
-    def __init__(self, api_key, location, units: Unit):
-        self.api_key: str = api_key
-        self.location: str = location
-        self.units: Unit = units
-        self.error = None
-
-    def request(self) -> None:
-        """Get weather data form OpenWeather"""
-        self.refreshed_at = datetime.datetime.now().strftime("%H:%M")
+    def get(self) -> Optional[dict[Any, Any]]:
+        """Request data from the OpenWeather API."""
         try:
-            return requests.get(
-                f"https://api.openweathermap.org/data/2.5/weather?q={self.location}&appid={self.api_key}&units={self.units.value}"
-            ).json()
-        # In case of error self.text becomes self.error -> see def print()
-        # In case of error self.tooltip becomes self.error_tooltip -> see def print()
+            response = requests.get(
+                f"https://api.openweathermap.org/data/2.5/weather?q={self.location}&appid={self.api_key}&units={self.unit.value}"
+            )
+            response.raise_for_status()
+            return response.json()
         except requests.exceptions.HTTPError as HErr:
             self.error = "Http Error"
-            self.error_tooltip = str(HErr)
+            self.error_message = str(HErr)
         except requests.exceptions.ConnectionError as CErr:
             self.error = "Connection Error"
-            self.error_tooltip = str(CErr)
+            self.error_message = str(CErr)
         except requests.exceptions.Timeout as TErr:
             self.error = "Timeout Error"
-            self.error_tooltip = str(TErr)
+            self.error_message = str(TErr)
         except requests.exceptions.RequestException as RErr:
-            self.error = "Error"
-            self.error_tooltip = str(RErr)
-
-    def get_weather(self, raw_data) -> None:
-        """Get weather from API data"""
-        if raw_data:
-            if raw_data["cod"] == 200:
-                self.city = raw_data["name"]
-                self.datetime = datetime.datetime.fromtimestamp(
-                    raw_data["dt"]
-                ).strftime("%H:%M")
-                self.temperature: int = round(raw_data["main"]["temp"])
-                self.temperature_feel: int = round(raw_data["main"]["feels_like"])
-                self.temperature_min: int = round(raw_data["main"]["temp_min"])
-                self.temperature_max: int = round(raw_data["main"]["temp_max"])
-                if self.temperature <= 10:
-                    self.css_class = "cold"
-                elif self.temperature >= 20:
-                    self.css_class = "warm"
-                elif self.temperature >= 30:
-                    self.css_class = "hot"
-                else:
-                    self.css_class = "regular"
-
-                if self.units == Unit.METRIC:
-                    self.temperature_unit = "°C"
-                elif self.units == Unit.IMPERIAL:
-                    self.temperature_unit = "°F"
-                elif self.units == Unit.STANDARD:
-                    self.temperature_unit = " K"
-                else:
-                    self.temperature_unit = ""
-                self.wind_speed = round(raw_data["wind"]["speed"])
-                self.wind_direction = raw_data["wind"]["deg"]
-                self.wind_direction_icon = [
-                    "↑",
-                    "↗",
-                    "→",
-                    "↘",
-                    "↓",
-                    "↙",
-                    "←",
-                    "↖",
-                ][self.wind_direction // 45 % 8]
-                self.wind_direction_text = [
-                    "N",
-                    "NE",
-                    "E",
-                    "SE",
-                    "S",
-                    "SW",
-                    "W",
-                    "NW",
-                ][self.wind_direction // 45 % 8]
-                try:
-                    self.wind_gust = round(raw_data["wind"]["gust"])
-                except KeyError:
-                    self.wind_gust = None
-                self.wind_unit = "m/s"
-
-                self.weather = raw_data["weather"][0]["main"]
-                self.weather_desc = raw_data["weather"][0]["description"]
-                self.weather_humid = raw_data["main"]["humidity"]
-                self.weather_icon = {
-                    "Thunderstorm": "",
-                    "Drizzle": "",
-                    "Rain": "",
-                    "Snow": "",
-                    "Clear": "",
-                    "Clouds": "",
-                }[self.weather]
-                self.weather_unit = "%"
-
-            else:
-                self.error = f"Error: {raw_data['cod']}"
-                self.error_tooltip = f"{raw_data['message'] if raw_data['message'] else 'Something went wrong'}"
+            self.error = "Request Exception"
+            self.error_message = str(RErr)
 
     def refresh(self) -> None:
-        self.get_weather(self.request())
+        data: Optional[dict[Any, Any]] = self.get()
+        if not data:
+            return
+
+        if not data["cod"] == 200:
+            self.error = f"Error: {data['cod']}"
+            self.error_message = f"{data['message'] if data['message'] else 'Something went wrong'}"
+            return
+
+        general_data = data["weather"][0]
+        temperature_data = data["main"]
+        wind_data = data["wind"]
+
+        self.refreshed_at = datetime.datetime.now().strftime("%H:%M")
+        self.city = data.get("name")
+        self.datetime = datetime.datetime.fromtimestamp(
+            data.get("dt", float)
+        ).strftime("%H:%M")
+        self.temperature = Temperature(
+            value=round(temperature_data.get("temp")),
+            symbol="",
+            unit=self.unit,
+        )
+        if self.temperature.value <= 10:
+            self.css_class = "cold"
+        elif self.temperature.value > 29:
+            self.css_class = "warm"
+        elif self.temperature.value > 29:
+            self.css_class = "hot"
+        self.temperature_feel = Temperature(
+            value=round(temperature_data.get("feels_like")),
+            symbol="",
+            unit=self.unit,
+        )
+        self.temperature_min = Temperature(
+            value=round(temperature_data.get("temp_min")),
+            symbol="",
+            unit=self.unit,
+        )
+        self.temperature_max = Temperature(
+            value=round(temperature_data.get("temp_max")),
+            symbol="",
+            unit=self.unit,
+        )
+        self.humidity = ValueWithSymbol(
+            value=temperature_data.get("humidity"),
+            symbol="%",
+        )
+        self.pressure = ValueWithSymbol(
+            value=temperature_data.get("pressure"),
+            symbol=" hPa",
+        )
+        self.wind = ValueWithSymbol(
+            value=round(wind_data.get("speed")),
+            symbol="m/s",
+        )
+        self.gust = ValueWithSymbol(
+            value=round(wind_data.get("gust", "--")),
+            symbol="m/s",
+        )
+        self._wind_direction: int = wind_data.get("deg") // 45 % 8
+        self._wind_direction_symbol = [
+            "↑",
+            "↗",
+            "→",
+            "↘",
+            "↓",
+            "↙",
+            "←",
+            "↖",
+        ][self._wind_direction]
+        self._wind_direction_value = [
+            "N",
+            "NE",
+            "E",
+            "SE",
+            "S",
+            "SW",
+            "W",
+            "NW",
+        ][self._wind_direction]
+        self.wind_direction = ValueWithSymbol(
+            value=self._wind_direction_value,
+            symbol=self._wind_direction_symbol,
+        )
+        self.weather: str = general_data.get("main")
+        self.weather_desc: str = general_data.get("description").title()
+        self.weather_icon: str = {
+            "Thunderstorm": "",
+            "Drizzle": "",
+            "Rain": "",
+            "Snow": "",
+            "Clear": "",
+            "Clouds": "",
+        }[self.weather]
+
+    def formatter(
+        self,
+        title_format: str,
+        text_format: str,
+    ) -> None:
+        """Replace the format options with data.
+
+        Args:
+            title_format (str): Format to use for the title, for example: title_format = "{city} {temperature}"
+            text_format (str): Format to use for the text, for example: text_format = "humidity: {humidity}\npressure: {pressure}"
+        """
+        if self.error:
+            self.text = self.error
+            self.tooltip = self.error_message
+            return
+
+        format_options = {
+            "{city}": self.city,
+            "{humidity}": self.humidity.__str__(),
+            "{pressure}": self.pressure.__str__(),
+            "{temperature}": self.temperature.__str__(),
+            "{temperatureFeel}": self.temperature_feel.__str__(),
+            "{temperatureMin}": self.temperature_min.__str__(),
+            "{temperatureMax}": self.temperature_max.__str__(),
+            "{time}": self.datetime,
+            "{refreshedAt}": self.refreshed_at,
+            "{weather}": self.weather,
+            "{weatherIcon}": self.weather_icon,
+            "{weatherDesc}": self.weather_desc,
+            "{windDirection}": self.wind_direction.__str__(),
+            "{windSpeed}": self.wind.__str__(),
+            "{windGust}": self.gust.__str__(),
+        }
+
+        for opt in format_options:
+            title_format = title_format.replace(
+                opt, format_options.get(opt, None)
+            )
+            text_format = text_format.replace(opt, format_options.get(opt, ""))
+
+        self.text = title_format
+        self.tooltip = text_format
 
     def print(
         self,
         out_format: bool,  # True is output as text, False is output as json
-        title_format: str,
-        text_format: str,
     ) -> None:
         """Replace format options with data and print text and tooltip as json or normal text"""
-        if self.error:
-            if out_format is True:
-                if self.error:
-                    print(self.error, self.error_tooltip, flush=True)
-
-            else:
-                if self.error:
-                    print(
-                        json.dumps({"text": self.error, "tooltip": self.error_tooltip}),
-                        flush=True,
-                    )
-
-                    print(self.error, self.error_tooltip, flush=True)
-
-                else:
-                    if self.error:
-                        print(
-                            json.dumps(
-                                {
-                                    "text": self.error,
-                                    "tooltip": self.error_tooltip,
-                                }
-                            ),
-                            flush=True,
-                        )
+        if out_format is True:
+            print(
+                self.text,
+                self.tooltip,
+                sep="\n",
+                flush=True,
+            )
 
         else:
-            format_options = {
-                "{city}": self.city,
-                "{humidity}": f"{self.weather_humid}{self.weather_unit}",
-                "{temperature}": f"{self.temperature}{self.temperature_unit}",
-                "{temperatureFeel}": f"{self.temperature_feel}{self.temperature_unit}",
-                "{temperatureMin}": f"{self.temperature_min}{self.temperature_unit}",
-                "{temperatureMax}": f"{self.temperature_max}{self.temperature_unit}",
-                "{time}": self.datetime,
-                "{refreshedAt}": self.refreshed_at,
-                "{weather}": self.weather,
-                "{weatherIcon}": self.weather_icon,
-                "{weatherDesc}": self.weather_desc.title(),
-                "{windDirection}": str(self.wind_direction),
-                "{windDirectionIcon}": self.wind_direction_icon,
-                "{windDirectionText}": self.wind_direction_text,
-                "{windSpeed}": f"{self.wind_speed}{self.wind_unit}",
-                "{windGust}": f"{self.wind_gust}{self.wind_unit}"
-                if self.wind_gust
-                else "",
-            }
-            # Replace format options with data
-            for opt in format_options:
-                try:
-                    title_format = title_format.replace(opt, format_options[opt])
-                    text_format = text_format.replace(opt, format_options[opt])
-                except AttributeError:
-                    pass
-            self.text = title_format
-            self.tooltip = text_format
-
-            if out_format is True:
-                print(
-                    self.text,
-                    self.tooltip,
-                    sep="\n",
-                    flush=True,
-                )
-
-            else:
-                print(
-                    json.dumps(
-                        {
-                            "text": self.text,
-                            "tooltip": self.tooltip,
-                            "class": self.css_class,
-                        }
-                    ),
-                    flush=True,
-                )
+            print(
+                json.dumps(
+                    {
+                        "text": self.text,
+                        "tooltip": self.tooltip,
+                        "class": self.css_class,
+                    }
+                ),
+                flush=True,
+            )
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -252,9 +279,9 @@ class Weather:
     metavar="CITY",
 )
 @click.option(
-    "--units",
+    "--unit",
     "-u",
-    help="Which units to use. standard: Kelvin(K), metric: Celsius(°C), imperial: Fahrenheit(°C). [default: metric]",
+    help="Which unit to use. standard: Kelvin(K), metric: Celsius(°C), imperial: Fahrenheit(°C). [default: metric]",
     type=click.Choice([unit.value for unit in Unit], case_sensitive=False),
 )
 @click.option(
@@ -281,7 +308,7 @@ def main(
     config: TextIO,  # type: ignore
     api_key: str,  # type: ignore
     location: str,  # type: ignore
-    units: str,  # type: ignore
+    unit: str,  # type: ignore
     interval: int,
     title_format: str,
     text_format: str,
@@ -304,11 +331,11 @@ def main(
             location: str = config["location"]
         except KeyError:
             location = input("Location: ")
-    if not units:
+    if not unit:
         try:
-            units: str = config["units"]
+            unit: str = config["units"]
         except KeyError:
-            units = "metric"
+            unit = "metric"
     if interval is None:
         try:
             interval = config["interval"]
@@ -330,14 +357,14 @@ def main(
         except KeyError:
             out_format = False
 
-    weather = Weather(api_key=api_key, location=location, units=Unit(units))
+    weather = Weather(api_key=api_key, location=location, unit=Unit(unit))
     while True:
         weather.refresh()
-        weather.print(
-            out_format,
+        weather.formatter(
             title_format=title_format,
             text_format=text_format,
         )
+        weather.print(out_format)
         if interval == 0:
             exit()
         sleep(interval)
