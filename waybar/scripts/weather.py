@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import datetime
+import json
 from dataclasses import dataclass
 from enum import Enum
 from time import sleep
-from typing import Any, Callable, TextIO, Optional
+from typing import Any, Callable, Optional, TextIO
 
 import click
 import requests
@@ -52,7 +52,7 @@ class Temperature(ValueWithSymbol):
         elif self.unit == Unit.IMPERIAL:
             self.symbol = "°F"
         elif self.unit == Unit.STANDARD:
-            self.symbol = " K"
+            self.symbol = "K"
         return f"{self.value}{self.symbol}"
 
 
@@ -93,7 +93,9 @@ class Weather:
 
         if not data["cod"] == 200:
             self.error = f"Error: {data['cod']}"
-            self.error_message = f"{data['message'] if data['message'] else 'Something went wrong'}"
+            self.error_message = (
+                f"{data['message'] if data['message'] else 'Something went wrong'}"
+            )
             return
 
         general_data = data["weather"][0]
@@ -102,9 +104,9 @@ class Weather:
 
         self.refreshed_at = datetime.datetime.now().strftime("%H:%M")
         self.city = data.get("name")
-        self.datetime = datetime.datetime.fromtimestamp(
-            data.get("dt", float)
-        ).strftime("%H:%M")
+        self.datetime = datetime.datetime.fromtimestamp(data.get("dt", float)).strftime(
+            "%H:%M"
+        )
         self.temperature = Temperature(
             value=round(temperature_data.get("temp")),
             symbol="",
@@ -112,7 +114,7 @@ class Weather:
         )
         if self.temperature.value <= 10:
             self.css_class = "cold"
-        elif self.temperature.value > 29:
+        elif self.temperature.value > 19:
             self.css_class = "warm"
         elif self.temperature.value > 29:
             self.css_class = "hot"
@@ -175,12 +177,12 @@ class Weather:
         self.weather: str = general_data.get("main")
         self.weather_desc: str = general_data.get("description").title()
         self.weather_icon: str = {
-            "Thunderstorm": "",
-            "Drizzle": "",
-            "Rain": "",
-            "Snow": "",
-            "Clear": "",
-            "Clouds": "",
+            "Thunderstorm": " ",
+            "Drizzle": " ",
+            "Rain": " ",
+            "Snow": "  ",
+            "Clear": " ",
+            "Clouds": "  ",
         }[self.weather]
 
     def formatter(
@@ -218,9 +220,7 @@ class Weather:
         }
 
         for opt in format_options:
-            title_format = title_format.replace(
-                opt, format_options.get(opt, None)
-            )
+            title_format = title_format.replace(opt, format_options.get(opt, None))
             text_format = text_format.replace(opt, format_options.get(opt, ""))
 
         self.text = title_format
@@ -322,40 +322,21 @@ def main(
     else:
         config = {}
     if not api_key:
-        try:
-            api_key: str = config["api_key"]
-        except KeyError:
-            api_key = input("API key: ")
+        if not (api_key := config.get("api_key")):
+            raise click.ClickException("Please provide an API-key")
     if not location:
-        try:
-            location: str = config["location"]
-        except KeyError:
-            location = input("Location: ")
+        if not (location := config.get("location")):
+            raise click.ClickException("Please provide a location")
     if not unit:
-        try:
-            unit: str = config["units"]
-        except KeyError:
-            unit = "metric"
+        unit = config.get("units", "metric")
     if interval is None:
-        try:
-            interval = config["interval"]
-        except KeyError:
-            interval = 0
+        interval = config.get("interval", 0)
     if not title_format:
-        try:
-            title_format = config["title_format"]
-        except KeyError:
-            title_format = "{temperature}"
+        title_format = config.get("title_format", "{temperature}")
     if not text_format:
-        try:
-            text_format = config["text_format"]
-        except KeyError:
-            text_format = "{city}"
+        text_format = config.get("text_format", "{city}")
     if out_format is None:
-        try:
-            out_format = config["out_format"]
-        except KeyError:
-            out_format = False
+        out_format = config.get("out_format", False)
 
     weather = Weather(api_key=api_key, location=location, unit=Unit(unit))
     while True:

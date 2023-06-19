@@ -39,9 +39,9 @@
     "interval": "once"
   },
   "custom/weather": {
-    "exec": "python3 ~/.config/waybar/scripts/weather.py -c ~/.config/waybar/weather_config.json",
-    "exec-on-event": false,
-    "on-click":"python3 ~/.config/waybar/scripts/weather.py --interval 0 --config ~/.config/waybar/weather_config.json",
+    "exec": "python3 ~/.config/waybar/scripts/weather.py --interval 0 --config ~/.config/waybar/weather_config.json",
+    "on-click": "python3 ~/.config/waybar/scripts/weather.py --interval 0 --config ~/.config/waybar/weather_config.json",
+    "restart-interval": 300,
     "return-type": "json",
     "format": "{}"
   },

@@ -141,6 +141,3 @@ tooltip * {
 #custom-weather.hot {
   color: @red;
 }
-#custom-weather.hot {
-  color: @text;
-}
